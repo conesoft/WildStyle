@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Threading.Tasks;
 using WildStyle;
 using Windows.UI;
@@ -22,6 +23,8 @@ namespace Simple_Demo_Application
 
         private void BeginRender()
         {
+            tracer.AddSphere(Vector3.UnitZ * 5, 1);
+
             var camera = tracer.CreateCamera();
             var image = camera.Snapshot(320, 180);
 
