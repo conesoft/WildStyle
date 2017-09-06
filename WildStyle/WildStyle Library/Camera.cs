@@ -11,7 +11,7 @@ namespace WildStyle
             this.tracer = tracer;
         }
 
-        internal Ray CreateRay(int x, int y, int width, int height)
+        internal Ray CreateRay(float x, float y, int width, int height)
         {
             var aspect = (float)width / (float)height;
 
@@ -25,10 +25,10 @@ namespace WildStyle
             };
         }
 
-        public Vector3[,] Snapshot(int width, int height)
+        public Vector3[,] Snapshot(int width, int height, int dx, int dy)
         {
             var frame = new Vector3[width, height];
-            tracer.Trace(width, height, this, frame);
+            tracer.Trace(width, height, dx, dy, this, frame);
             return frame;
         }
     }
