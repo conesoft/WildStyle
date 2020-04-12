@@ -23,7 +23,7 @@ namespace WildStyle
                 for (var x = 0; x < width * dx; x++)
                 {
                     var ray = camera.CreateRay((float)x / dx, (float)y / dy, width, height);
-                    frame[x / dx, y /dy] += Trace(ray, 3) / (dx * dy);
+                    frame[x / dx, y / dy] += Trace(ray, 3) / (dx * dy);
                 }
             }
         }
@@ -36,7 +36,7 @@ namespace WildStyle
             var l = 0f;
             do
             {
-                v.X = (float)r.NextDouble() * 2f -1f;
+                v.X = (float)r.NextDouble() * 2f - 1f;
                 v.Y = (float)r.NextDouble() * 2f - 1f;
                 v.Z = (float)r.NextDouble() * 2f - 1f;
                 l = Vector3.Dot(v, v);

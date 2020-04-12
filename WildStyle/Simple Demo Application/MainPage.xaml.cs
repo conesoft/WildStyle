@@ -20,12 +20,12 @@ namespace Simple_Demo_Application
 
             tracer = new Tracer();
 
-            BeginRender();
+            var _ = BeginRender();
         }
 
         private async Task BeginRender()
         {
-            var size = (width: 640, height: 360);
+            var size = (width: 1280, height: 720);
             var image = default(Vector3[,]);
             await Task.Run(() =>
             {
