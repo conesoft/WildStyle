@@ -12,7 +12,7 @@ namespace Simple_Demo_Application
     public sealed partial class MainPage : Page
     {
         Tracer tracer;
-        Random r = new Random();
+        System.Random r = new System.Random();
 
         public MainPage()
         {
@@ -25,7 +25,7 @@ namespace Simple_Demo_Application
 
         private async Task BeginRender()
         {
-            var size = (width: 1280, height: 720);
+            var size = (width: 1920, height: 1080);
             var image = default(Vector3[,]);
             await Task.Run(() =>
             {
@@ -37,12 +37,12 @@ namespace Simple_Demo_Application
                 tracer.AddSphere(Vector3.UnitZ * 4 - Vector3.UnitX * .5f, 1f, orange);
                 tracer.AddSphere(Vector3.UnitZ * 3 + Vector3.UnitX * .35f - Vector3.UnitY * .25f, .25f, grey);
                 tracer.AddSphere(Vector3.UnitZ * 3.2f - Vector3.UnitX * .45f - Vector3.UnitY * .45f, .25f, glow);
-                //tracer.AddSphere((Vector3.UnitZ * 4 + Vector3.UnitY * 3.5f - Vector3.UnitX * .4f) * 6, 27f, blue);
+                tracer.AddSphere((Vector3.UnitZ * 4 + Vector3.UnitY * 3.5f - Vector3.UnitX * .4f) * 6, 27f, blue);
                 tracer.AddSphere(Vector3.UnitZ * 2 + Vector3.UnitX * 4 - Vector3.UnitY * 3.5f, 3f, slightlyGlowing);
-                //tracer.AddSphere(Vector3.UnitZ * 3 + Vector3.UnitX * .45f - Vector3.UnitY * .35f, .25f, glow);
+                tracer.AddSphere(Vector3.UnitZ * 3 + Vector3.UnitX * .45f - Vector3.UnitY * .35f, .25f, glow);
 
                 var camera = tracer.CreateCamera();
-                image = camera.Snapshot(size.width, size.height, 5, 5);
+                image = camera.Snapshot(size.width, size.height, 24, 24);
             });
 
             var bitmap = new WriteableBitmap(size.width, size.height);

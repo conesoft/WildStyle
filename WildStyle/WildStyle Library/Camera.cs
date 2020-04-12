@@ -28,7 +28,7 @@ namespace WildStyle
         public Vector3[,] Snapshot(int width, int height, int dx, int dy)
         {
             var frame = new Vector3[width, height];
-            tracer.Trace(width, height, dx, dy, this, frame);
+            tracer.TraceParallel(width, height, dx, dy, this, frame);
             return frame;
         }
     }

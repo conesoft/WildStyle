@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace WildStyle
 {
     public class Tracer
     {
-        List<Sphere> spheres = new List<Sphere>();
+        readonly List<Sphere> spheres = new List<Sphere>();
 
         internal void Trace(int width, int height, int dx, int dy, Camera camera, Vector3[,] frame)
         {
+            var r = new Random();
             for (var y = 0; y < height; y++)
             {
                 for (var x = 0; x < width; x++)
@@ -23,25 +25,30 @@ namespace WildStyle
                 for (var x = 0; x < width * dx; x++)
                 {
                     var ray = camera.CreateRay((float)x / dx, (float)y / dy, width, height);
-                    frame[x / dx, y / dy] += Trace(ray, 3) / (dx * dy);
+                    frame[x / dx, y / dy] += Trace(ray, 3, r) / (dx * dy);
                 }
             }
         }
 
-        Random r = new Random();
-
-        private Vector3 RandomVectorTowards(Vector3 normal)
+        internal void TraceParallel(int width, int height, int dx, int dy, Camera camera, Vector3[,] frame)
         {
-            var v = Vector3.Zero;
-            var l = 0f;
-            do
+            var scale = 1f / (dx * dy);
+            Parallel.For(0, height, new ParallelOptions { MaxDegreeOfParallelism = 128 }, y =>
             {
-                v.X = (float)r.NextDouble() * 2f - 1f;
-                v.Y = (float)r.NextDouble() * 2f - 1f;
-                v.Z = (float)r.NextDouble() * 2f - 1f;
-                l = Vector3.Dot(v, v);
-            } while (l > 1 && l < 0.1f);
-            return Vector3.Normalize(Vector3.Dot(v, normal) > 0 ? v : -v);
+                var r = new Random(y);
+                for (var x = 0; x < width; x++)
+                {
+                    frame[x, y] = default;
+                    for (var dyi = 0; dyi < dy; dyi++)
+                    {
+                        for (var dxi = 0; dxi < dx; dxi++)
+                        {
+                            var ray = camera.CreateRay(x + ((float)dxi / dx), y + ((float)dyi / dy), width, height);
+                            frame[x, y] += Trace(ray, 3, r) * scale;
+                        }
+                    }
+                }
+            });
         }
 
         public IMaterial CreateGlowingMaterial(float v) => new Glowing
@@ -49,39 +56,60 @@ namespace WildStyle
             Illumination = v
         };
 
-        private IEnumerable<(Sphere s, float distance)> TraceHits(Ray ray)
+        private (Sphere sphere, float distance)? TraceHit(Ray ray)
         {
-            return spheres
-                .Select(s => (s, distance: s.Intersects(ray)))
-                .Where(_ => _.distance.HasValue && _.distance.Value > 0f)
-                .OrderBy(_ => _.distance)
-                .Select(_ => (_.s, distance: _.distance.Value));
+            var hitSphere = default(Sphere);
+            var distance = float.PositiveInfinity;
+
+            for(var i = 0; i < spheres.Count; i++)
+            {
+                var s = spheres[i];
+
+                var intersection = s.Intersects(ray);
+
+                if(intersection.HasValue && intersection.Value < distance && intersection.Value > 0)
+                {
+                    hitSphere = s;
+                    distance = intersection.Value;
+                }
+            }
+
+            if(distance < float.PositiveInfinity)
+            {
+                return (hitSphere, distance);
+            }
+            return null;
+            //return spheres
+            //    .Select(s => (s, distance: s.Intersects(ray)))
+            //    .Where(_ => _.distance.HasValue && _.distance.Value > 0f)
+            //    .OrderBy(_ => _.distance)
+            //    .Select(_ => (_.s, distance: _.distance.Value));
         }
 
-        private Vector3 Trace(Ray ray, int iterations)
+        private Vector3 Trace(Ray ray, int iterations, Random r)
         {
-            var spheresHit = TraceHits(ray);
+            var possibleHit = TraceHit(ray);
 
-            if (spheresHit.Any())
+            if (possibleHit != null)
             {
-                var sphere = spheresHit.First();
-                var point = sphere.distance * ray.Direction + ray.Origin;
-                var material = sphere.s.Material.At(point, (point - sphere.s.Origin));
+                var hit = possibleHit.Value;
+                var point = hit.distance * ray.Direction + ray.Origin;
+                var material = hit.sphere.Material.At(point, (point - hit.sphere.Origin));
 
                 if (iterations <= 0)
                 {
                     return new Vector3(material.illuminating);
                 }
 
-                var normal = (point - sphere.s.Origin) / sphere.s.Radius;
+                var normal = (point - hit.sphere.Origin) / hit.sphere.Radius;
 
                 var randomSample = new Ray
                 {
                     Origin = point,
-                    Direction = RandomVectorTowards(normal)
+                    Direction = r.RandomVectorTowards(normal)
                 };
 
-                var shade = Trace(randomSample, iterations - 1) * Vector3.Dot(randomSample.Direction, normal);
+                var shade = Trace(randomSample, iterations - 1, r) * Vector3.Dot(randomSample.Direction, normal);
 
                 return new Vector3(material.illuminating) + shade * material.diffuse;
             }
